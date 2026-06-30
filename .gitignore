@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter / notebooks
+.ipynb_checkpoints/
+*.ipynb
+*.nbconvert.ipynb
+
+# Local tools and IDEs
+.claude/
+.idea/
+.vscode/
+*.log
+*.tmp
+
+# Historical / exploratory folders
+previous/
+baseline/
+papers/
+
+# Third-party source trees and binaries
+SaProt/
+esm/
+
+# Data and archives
+data/pretrain/
+data/downstream/
+data/contact_map/
+data/raw/
+data/processed/
+*.tar.gz
+*.zip
+
+# Outputs and results
+outputs/
+output/
+results/
+runs/
+wandb/
+tensorboard/
+lightning_logs/
+
+# Model checkpoints and weights
+checkpoints/
+*.pth
+*.pt
+*.ckpt
+*.bin
+*.safetensors
+
+# Large arrays and caches
+*.npz
+*.npy
+*.pkl
+*.pickle
+
+# Keep lightweight data examples
+!data/
+!data/examples/
+!data/examples/*.example.csv
