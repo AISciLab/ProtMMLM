@@ -144,15 +144,6 @@ fusion_transformer_trainable: true
 train_only_task_head: false
 ```
 
-For task-head-only MLP training:
-
-```yaml
-train_only_task_head: true
-task_head_type: mlp
-task_head_hidden_dims: [512, 128]
-task_head_dropout: 0.1
-```
-
 Example command:
 
 ```bash
