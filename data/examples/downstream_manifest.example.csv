@@ -1,2 +1,0 @@
-sample_id,sequence,sequence_hash,peptide_sequence,peptide_sequence_hash,pair_key,label,task_name,split,matched_pretrain_id,nature_path,md_path,has_dyn,peptide_matched_pretrain_id,peptide_nature_path,peptide_md_path,peptide_has_dyn,dyn_cache_path,peptide_dyn_cache_path
-example_sample,ACDEFGHIK,example_hash,,,,1,toxteller,train,example_protein,relative/path/to/native_structure.pdb,relative/path/to/md_trajectory.pdb,true,,,,false,,

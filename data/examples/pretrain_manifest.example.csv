@@ -1,2 +1,0 @@
-protein_id,sequence,sequence_hash,nature_path,md_path,has_nature,has_md,is_full
-example_protein,ACDEFGHIK,example_hash,relative/path/to/native_structure.pdb,relative/path/to/md_trajectory.pdb,true,true,true
