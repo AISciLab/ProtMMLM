@@ -1,0 +1,34 @@
+# Required external data: pretraining dataset
+
+Place or generate the pretraining files expected by `configs/pretrain/pretrain.yaml` under this directory.
+
+Recommended layout:
+
+```text
+datasets/pretrain/
+├── pretrain_manifest.csv
+├── all_sequences.fasta
+├── nature.tar.gz
+├── md.tar.gz
+├── nature/
+└── md/
+```
+
+Extract the archives before generating the manifest:
+
+```bash
+tar -xf datasets/pretrain/nature.tar.gz -C datasets/pretrain
+tar -xf datasets/pretrain/md.tar.gz -C datasets/pretrain
+```
+
+`pretrain_manifest.csv` can be generated with:
+
+```bash
+PYTHONPATH=. python scripts/prepare_pretrain_manifest.py \
+  --input-fasta datasets/pretrain/all_sequences.fasta \
+  --nature-dir datasets/pretrain/nature \
+  --md-dir datasets/pretrain/md \
+  --output datasets/pretrain/pretrain_manifest.csv
+```
+
+Large raw structures, MD trajectories, and derived caches are intentionally not committed to the GitHub repository.

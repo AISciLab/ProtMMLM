@@ -1,0 +1,9 @@
+# Required external dataset: ToxTeller
+
+Default config path:
+
+```text
+datasets/downstream/Toxteller/
+```
+
+Place the Toxteller raw FASTA files in that directory, or change `raw_data_path` in `configs/downstream/toxteller.yaml`.

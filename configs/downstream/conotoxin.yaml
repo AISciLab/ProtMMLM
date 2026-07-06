@@ -1,8 +1,8 @@
 task_name: conotoxin
 stage: downstream
-raw_data_path: ./data/downstream/conotoxin/filtered_id70
-pretrain_data_root: ./data/pretrain
-pretrain_checkpoint_path: ./outputs/pretrain/esmc600_formal/best.pth
+raw_data_path: ./datasets/downstream/Conotoxin
+pretrain_data_root: ./datasets/pretrain
+pretrain_checkpoint_path: ./outputs/pretrain/best.pth
 backend_mode: real
 model_name: esmc_600m
 use_flash_attn: false
@@ -39,7 +39,7 @@ cluster_coverage: 0.8
 cluster_cov_mode: 0
 cluster_train_fraction: 0.8
 cluster_validation_fraction: 0.1
-cluster_seed: 42
+cluster_seed: 52
 cluster_balance_labels: true
 cluster_shuffle_order: true
 balance_binary_train_split: true
@@ -48,8 +48,8 @@ learning_rate: 2.0e-05
 weight_decay: 0.01
 grad_clip: 1.0
 device: cuda
-batch_size: 32
-gradient_accumulation_steps: 1
+batch_size: 64
+gradient_accumulation_steps: 4
 validation_fraction: 0.1
 max_residues: 100
 max_frames: 160

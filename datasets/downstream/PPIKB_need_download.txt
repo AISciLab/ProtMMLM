@@ -1,0 +1,16 @@
+# Required external data: downstream datasets
+
+Place downstream datasets here before running full fine-tuning experiments.
+
+Expected local layout used by the default configs:
+
+```text
+datasets/downstream/
+├── Toxteller/
+├── PrMFTP/
+├── PPIKB/
+├── Conotoxin/
+└── Thermodynamic/
+```
+
+The repository also includes one prepared PPIKB downstream fold under `examples/ppikb/` for direct fine-tuning from pretrained ProtMMLM weights. Full downstream datasets should be downloaded from the Hugging Face dataset repository when reproducing all experiments.

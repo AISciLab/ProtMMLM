@@ -4,7 +4,7 @@ import csv
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, Optional
+from typing import Any, Dict, Iterable, Iterator, List, Optional
 
 from src.utils.sequence import iter_fasta_records, sequence_hash
 
@@ -57,19 +57,40 @@ class PretrainDataset:
         *,
         sample_limit: Optional[int] = None,
         full_only: bool = True,
+        nature_dir: str | Path | None = None,
+        md_dir: str | Path | None = None,
     ) -> "PretrainDataset":
         path = Path(manifest_path)
         if not path.exists():
             raise FileNotFoundError(f"Pretrain manifest does not exist: {path}")
         manifest_dir = path.parent.resolve()
+        nature_root = Path(nature_dir).resolve() if nature_dir is not None else None
+        md_root = Path(md_dir).resolve() if md_dir is not None else None
+        if nature_root is not None and not nature_root.exists():
+            raise FileNotFoundError(f"Pretrain nature directory does not exist: {nature_root}")
+        if md_root is not None and not md_root.exists():
+            raise FileNotFoundError(f"Pretrain MD directory does not exist: {md_root}")
 
         samples: List[PretrainSample] = []
         with path.open("r", encoding="utf-8", newline="") as handle:
             reader = csv.DictReader(handle)
             for row in reader:
-                is_full = _parse_bool(row.get("is_full"))
-                nature_path = _normalize_optional_path(row.get("nature_path"), base_dir=manifest_dir)
-                md_path = _normalize_optional_path(row.get("md_path"), base_dir=manifest_dir)
+                protein_id = (row.get("protein_id") or "").strip()
+                nature_path = _resolve_override_or_manifest_path(
+                    root=nature_root,
+                    protein_id=protein_id,
+                    resolver=_resolve_nature_path,
+                    raw_manifest_path=row.get("nature_path"),
+                    manifest_dir=manifest_dir,
+                )
+                md_path = _resolve_override_or_manifest_path(
+                    root=md_root,
+                    protein_id=protein_id,
+                    resolver=_resolve_md_path,
+                    raw_manifest_path=row.get("md_path"),
+                    manifest_dir=manifest_dir,
+                )
+                is_full = bool(nature_path and md_path) if (nature_root is not None or md_root is not None) else _parse_bool(row.get("is_full"))
                 if full_only and not is_full:
                     continue
                 if not nature_path or not md_path:
@@ -81,7 +102,7 @@ class PretrainDataset:
 
                 samples.append(
                     PretrainSample(
-                        protein_id=(row.get("protein_id") or "").strip(),
+                        protein_id=protein_id,
                         sequence=(row.get("sequence") or "").strip(),
                         sequence_hash=(row.get("sequence_hash") or "").strip(),
                         nature_path=nature_path,
@@ -195,6 +216,20 @@ def _resolve_md_path(md_root: Path, protein_id: str) -> Path | None:
     if candidate_pdb.exists() and _path_has_non_empty_file(candidate_pdb):
         return candidate_pdb.resolve()
     return None
+
+
+def _resolve_override_or_manifest_path(
+    *,
+    root: Path | None,
+    protein_id: str,
+    resolver: Any,
+    raw_manifest_path: object,
+    manifest_dir: Path,
+) -> Optional[str]:
+    if root is not None and protein_id:
+        resolved = resolver(root, protein_id)
+        return str(resolved) if resolved is not None else None
+    return _normalize_optional_path(raw_manifest_path, base_dir=manifest_dir)
 
 
 def _parse_bool(raw_value: object) -> bool:

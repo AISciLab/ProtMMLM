@@ -133,7 +133,8 @@ class DownstreamDataset:
                     )
 
                 task_kind = task_kind_for_name(row_task_name)
-                raw_label = (row.get("label") or "").strip()
+                raw_label = _first_non_empty_value(row, "label", "raw_label", "target")
+                split_name = _first_non_empty_value(row, "split", "subset", "manifest_split")
                 samples.append(
                     DownstreamStage1Sample(
                         sample_id=(row.get("sample_id") or "").strip(),
@@ -146,7 +147,7 @@ class DownstreamDataset:
                         peptide_sequence=_normalize_optional_value(row.get("peptide_sequence")),
                         peptide_sequence_hash=_normalize_optional_value(row.get("peptide_sequence_hash")),
                         pair_key=_normalize_optional_value(row.get("pair_key")),
-                        split=_normalize_split_name(row.get("split")),
+                        split=_normalize_split_name(split_name),
                         matched_pretrain_id=_normalize_optional_value(row.get("matched_pretrain_id")),
                         nature_path=_normalize_optional_path(row.get("nature_path"), base_dir=manifest_dir),
                         md_path=_normalize_optional_path(row.get("md_path"), base_dir=manifest_dir),
@@ -163,8 +164,9 @@ class DownstreamDataset:
                         ),
                     )
                 )
-                if sample_limit is not None and len(samples) >= sample_limit:
-                    break
+
+        if sample_limit is not None:
+            samples = _limit_manifest_samples(samples, sample_limit=sample_limit)
 
         if not samples:
             raise ValueError(f"No samples were loaded from {path} for task {normalized_task_name or '<inferred>'}.")
@@ -321,6 +323,35 @@ def _build_stage1_sample(
     )
 
 
+def _limit_manifest_samples(
+    samples: list[DownstreamStage1Sample],
+    *,
+    sample_limit: int,
+) -> list[DownstreamStage1Sample]:
+    if sample_limit <= 0 or len(samples) <= sample_limit:
+        return list(samples[:sample_limit])
+
+    split_order = ("train", "validation", "test")
+    selected: list[DownstreamStage1Sample] = []
+    selected_ids: set[str] = set()
+    for split_name in split_order:
+        split_sample = next((sample for sample in samples if sample.split == split_name), None)
+        if split_sample is None:
+            continue
+        selected.append(split_sample)
+        selected_ids.add(split_sample.sample_id)
+        if len(selected) >= sample_limit:
+            return selected
+
+    for sample in samples:
+        if sample.sample_id in selected_ids:
+            continue
+        selected.append(sample)
+        if len(selected) >= sample_limit:
+            break
+    return selected
+
+
 def _normalize_task_name(task_name: str | None) -> str:
     if task_name is None:
         raise ValueError("task_name is required.")
@@ -328,6 +359,14 @@ def _normalize_task_name(task_name: str | None) -> str:
     if not normalized:
         raise ValueError("task_name cannot be empty.")
     return normalized
+
+
+def _first_non_empty_value(row: dict[str, str], *keys: str) -> str:
+    for key in keys:
+        value = str(row.get(key) or "").strip()
+        if value:
+            return value
+    return ""
 
 
 def _normalize_optional_value(raw_value: object) -> Optional[str]:

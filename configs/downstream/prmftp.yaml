@@ -1,8 +1,8 @@
 task_name: prmftp
 stage: downstream
-raw_data_path: ./data/downstream/PrMFTP
-pretrain_data_root: ./data/pretrain
-pretrain_checkpoint_path: ./outputs/pretrain/esmc600_formal/best.pth
+raw_data_path: ./datasets/downstream/PrMFTP
+pretrain_data_root: ./datasets/pretrain
+pretrain_checkpoint_path: ./outputs/pretrain/best.pth
 backend_mode: real
 model_name: esmc_600m
 use_flash_attn: false
@@ -22,8 +22,10 @@ partial_pair_handling: seq_fallback
 aux_loss_reweight_mode: batch_coverage
 min_full_fraction_for_aux: 0.1
 task_head_type: auto
+multilabel_pos_weight_mode: batch
+multilabel_max_pos_weight: 20.0
 save_best_guarded_checkpoint: true
-monitor_subset: seq_only
+monitor_subset: overall
 monitor_name: Accuracy
 split_strategy: prmftp_mmseqs_clustered
 mmseqs_binary: mmseqs
@@ -33,7 +35,7 @@ cluster_cov_mode: 0
 cluster_train_fraction: 0.8
 cluster_validation_fraction: 0.1
 shuffle_train_each_epoch: true
-train_shuffle_seed: 42
+train_shuffle_seed: 52
 single_full_sample_oversample_factor: 1
 single_missing_task_fallback: seq_adapter
 single_task_feature_mode: raw_seq_residual
@@ -42,12 +44,9 @@ learning_rate: 2.0e-05
 weight_decay: 0.01
 grad_clip: 1.0
 device: cuda
-batch_size: 16
-gradient_accumulation_steps: 1
+batch_size: 64
+gradient_accumulation_steps: 4
 validation_fraction: 0.1
-# num_folds: 5
-# test_fold_index: 0
-# val_fold_offset: 1
 max_residues: 100
 max_frames: 160
 max_epochs: 100
@@ -57,4 +56,3 @@ min_delta: 0.0
 validation_interval: 1
 show_progress_downstream: true
 progress_log_interval_downstream: 50
-# notebook-aligned PrMFTP mixed config: random 9:1 validation split from train and Accuracy checkpoint selection

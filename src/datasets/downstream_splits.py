@@ -34,7 +34,14 @@ def split_downstream_dataset(
     balance_binary_train_split: bool = True,
 ) -> dict[str, Any]:
     resolved_split_strategy = _normalize_split_strategy(split_strategy)
-    if resolved_split_strategy == "prmftp_mmseqs_clustered":
+    if has_manifest_split(dataset):
+        split_bundle = split_downstream_dataset_from_manifest_splits(
+            dataset,
+            validation_fraction=validation_fraction,
+            validation_seed=validation_seed,
+            manifest_validation_policy=manifest_validation_policy,
+        )
+    elif resolved_split_strategy == "prmftp_mmseqs_clustered":
         split_bundle = split_prmftp_dataset_by_mmseqs_clusters(
             dataset,
             mmseqs_binary=mmseqs_binary,
@@ -59,13 +66,6 @@ def split_downstream_dataset(
             split_source_name="sequence_mmseqs_clustered",
             cluster_balance_labels=cluster_balance_labels,
             cluster_shuffle_order=cluster_shuffle_order,
-        )
-    elif has_manifest_split(dataset):
-        split_bundle = split_downstream_dataset_from_manifest_splits(
-            dataset,
-            validation_fraction=validation_fraction,
-            validation_seed=validation_seed,
-            manifest_validation_policy=manifest_validation_policy,
         )
     else:
         split_bundle = split_downstream_dataset_by_folds(

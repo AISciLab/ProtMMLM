@@ -180,7 +180,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--raw-data-path",
         type=Path,
         default=None,
-        help="Optional raw official data root, e.g. data/downstream/processed/regression for PPIKB.",
+        help="Optional raw official data root, e.g. datasets/downstream/PPIKB for PPIKB.",
     )
     parser.add_argument(
         "--validation-fraction",
@@ -596,24 +596,33 @@ def main(argv: list[str] | None = None) -> int:
 def _default_downstream_data_root(task_name: str) -> str:
     normalized = str(task_name).strip().lower().replace("-", "_")
     if normalized == "toxteller":
-        return "./data/downstream/ToxTeller"
+        return "./datasets/downstream/Toxteller"
     if normalized == "conotoxin":
-        return "./data/downstream/conotoxin/filtered_id70"
+        return "./datasets/downstream/Conotoxin"
     if normalized == "prmftp":
-        return "./data/downstream/PrMFTP"
+        return "./datasets/downstream/PrMFTP"
     if normalized == "ppikb":
-        return "./data/downstream/processed/regression"
+        return "./datasets/downstream/PPIKB"
     raise ValueError(f"Unsupported downstream task {task_name!r}.")
 
 
 def _default_pretrain_data_root() -> str:
-    return "./data/pretrain"
+    return "./datasets/pretrain"
 
 
 def _load_downstream_dataset(
     config: DownstreamTrainerConfig,
     config_dict: Dict[str, Any],
 ) -> DownstreamDataset:
+    manifest_path = _resolve_repo_path(config_dict.get("manifest_path"))
+    data_source = str(config_dict.get("data_source") or "").strip().lower()
+    if manifest_path and data_source in {"", "manifest"}:
+        return DownstreamDataset.from_manifest(
+            manifest_path,
+            task_name=config.task_name,
+            sample_limit=config.sample_limit,
+        )
+
     raw_data_path = _resolve_repo_path(
         config_dict.get("raw_data_path", _default_downstream_data_root(config.task_name))
     )
@@ -691,6 +700,8 @@ def _build_downstream_config(config_dict: Dict[str, Any]) -> DownstreamTrainerCo
         backend_mode=str(config_dict.get("backend_mode", "real")),
         regression_loss_mode=str(config_dict.get("regression_loss_mode", "huber")),
         regression_delta=float(config_dict.get("regression_delta", 1.0)),
+        multilabel_pos_weight_mode=str(config_dict.get("multilabel_pos_weight_mode", "none")),
+        multilabel_max_pos_weight=float(config_dict.get("multilabel_max_pos_weight", 20.0)),
         max_sequence_length=int(
             config_dict.get(
                 "max_sequence_length",

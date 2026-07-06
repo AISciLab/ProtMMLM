@@ -4,11 +4,11 @@ from collections import Counter, defaultdict
 from dataclasses import replace
 from pathlib import Path
 import random
-import subprocess
 import tempfile
 from typing import Any
 
 from src.datasets.downstream_dataset import DownstreamDataset
+from src.datasets.sequence_cluster_preprocessing import SequenceClusterRecord, run_mmseqs_easy_cluster, write_sequence_fasta
 
 
 DEFAULT_MMSEQS_BINARY = "mmseqs"
@@ -233,51 +233,22 @@ def _run_mmseqs_cluster(
     split_source_name: str,
 ) -> dict[str, str]:
     prefix = _safe_prefix(split_source_name)
+    records = [
+        SequenceClusterRecord(record_id=record_id, sequence=sequence)
+        for record_id, sequence in sorted(sequence_records.items())
+    ]
     with tempfile.TemporaryDirectory(prefix=f"{prefix}_") as tmp_dir:
         tmp_root = Path(tmp_dir)
-        fasta_path = tmp_root / "all_sequences.fasta"
-        cluster_prefix = tmp_root / "clustered"
-        cluster_tsv_path = tmp_root / "clustered_cluster.tsv"
-        tmp_workdir = tmp_root / "work"
-
-        with fasta_path.open("w", encoding="utf-8") as handle:
-            for record_id, sequence in sorted(sequence_records.items()):
-                handle.write(f">{record_id}\n{sequence}\n")
-
-        command = [
-            mmseqs_binary,
-            "easy-cluster",
-            str(fasta_path),
-            str(cluster_prefix),
-            str(tmp_workdir),
-            "--min-seq-id",
-            str(cluster_min_seq_id),
-            "-c",
-            str(cluster_coverage),
-            "--cov-mode",
-            str(cluster_cov_mode),
-        ]
-        completed = subprocess.run(
-            command,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
+        fasta_path = write_sequence_fasta(records, tmp_root / "all_sequences.fasta")
+        cluster_by_record_id = run_mmseqs_easy_cluster(
+            fasta_path,
+            output_prefix=tmp_root / "clustered",
+            tmp_dir=tmp_root / "work",
+            mmseqs_binary=mmseqs_binary,
+            min_seq_id=cluster_min_seq_id,
+            coverage=cluster_coverage,
+            cov_mode=cluster_cov_mode,
         )
-        if not cluster_tsv_path.exists():
-            raise FileNotFoundError(
-                "MMseqs2 clustering completed without producing the expected cluster TSV: "
-                f"{cluster_tsv_path}. stdout={completed.stdout!r} stderr={completed.stderr!r}"
-            )
-
-        cluster_by_record_id: dict[str, str] = {}
-        with cluster_tsv_path.open("r", encoding="utf-8") as handle:
-            for line in handle:
-                stripped = line.strip()
-                if not stripped:
-                    continue
-                representative, member = stripped.split("\t")
-                cluster_by_record_id[member] = representative
 
     missing_record_ids = sorted(record_id for record_id in sequence_records if record_id not in cluster_by_record_id)
     if missing_record_ids:

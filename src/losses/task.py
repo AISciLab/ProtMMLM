@@ -50,12 +50,16 @@ def multilabel_classification_loss(
     targets: Sequence[float] | Sequence[Sequence[float]],
     *,
     valid_mask: Sequence[bool] | None = None,
+    pos_weight_mode: str = "none",
+    max_pos_weight: float = 20.0,
 ) -> float:
     if _uses_torch_tensors(logits, targets):
         return _multilabel_classification_loss_torch(
             logits,
             targets,
             valid_mask=valid_mask,
+            pos_weight_mode=pos_weight_mode,
+            max_pos_weight=max_pos_weight,
         )
 
     logit_matrix = ensure_matrix(logits, name="logits")
@@ -70,15 +74,20 @@ def multilabel_classification_loss(
     if not filtered_logits:
         return 0.0
 
-    per_sample_losses = [
-        mean(
-            [
-                binary_cross_entropy_with_logits(logit_value, target_value)
-                for logit_value, target_value in zip(logit_row, target_row)
-            ]
-        )
-        for logit_row, target_row in zip(filtered_logits, filtered_targets)
-    ]
+    pos_weights = _multilabel_pos_weights(
+        filtered_targets,
+        mode=pos_weight_mode,
+        max_pos_weight=max_pos_weight,
+    )
+    per_sample_losses = []
+    for logit_row, target_row in zip(filtered_logits, filtered_targets):
+        losses = []
+        for label_index, (logit_value, target_value) in enumerate(zip(logit_row, target_row)):
+            loss = binary_cross_entropy_with_logits(logit_value, target_value)
+            if float(target_value) >= 0.5:
+                loss *= pos_weights[label_index]
+            losses.append(loss)
+        per_sample_losses.append(mean(losses))
     return mean(per_sample_losses)
 
 
@@ -256,6 +265,8 @@ def _multilabel_classification_loss_torch(
     targets: object,
     *,
     valid_mask: Sequence[bool] | None,
+    pos_weight_mode: str,
+    max_pos_weight: float,
 ) -> object:
     torch = importlib.import_module("torch")
     functional = importlib.import_module("torch.nn.functional")
@@ -282,7 +293,67 @@ def _multilabel_classification_loss_torch(
     filtered_targets = target_tensor[mask_tensor]
     if filtered_logits.shape[0] == 0:
         return logit_tensor.sum() * 0.0
-    return functional.binary_cross_entropy_with_logits(filtered_logits, filtered_targets)
+    pos_weight = _multilabel_pos_weight_tensor(
+        filtered_targets,
+        mode=pos_weight_mode,
+        max_pos_weight=max_pos_weight,
+        torch_module=torch,
+    )
+    return functional.binary_cross_entropy_with_logits(
+        filtered_logits,
+        filtered_targets,
+        pos_weight=pos_weight,
+    )
+
+
+def _multilabel_pos_weights(
+    targets: list[list[float]],
+    *,
+    mode: str,
+    max_pos_weight: float,
+) -> list[float]:
+    normalized_mode = str(mode).strip().lower()
+    if normalized_mode in {"", "none", "false", "off"}:
+        return [1.0 for _ in range(len(targets[0]))]
+    if normalized_mode != "batch":
+        raise ValueError(f"Unsupported multilabel pos_weight_mode={mode!r}. Expected none or batch.")
+
+    num_labels = len(targets[0])
+    weights: list[float] = []
+    for label_index in range(num_labels):
+        positives = sum(1 for row in targets if float(row[label_index]) >= 0.5)
+        negatives = len(targets) - positives
+        if positives <= 0:
+            weights.append(1.0)
+        else:
+            weights.append(min(float(max_pos_weight), max(1.0, negatives / float(positives))))
+    return weights
+
+
+def _multilabel_pos_weight_tensor(
+    target_tensor: object,
+    *,
+    mode: str,
+    max_pos_weight: float,
+    torch_module: object,
+) -> object | None:
+    normalized_mode = str(mode).strip().lower()
+    if normalized_mode in {"", "none", "false", "off"}:
+        return None
+    if normalized_mode != "batch":
+        raise ValueError(f"Unsupported multilabel pos_weight_mode={mode!r}. Expected none or batch.")
+
+    positives = (target_tensor >= 0.5).sum(dim=0).to(dtype=torch_module.float32)
+    total = torch_module.tensor(
+        float(target_tensor.shape[0]),
+        dtype=torch_module.float32,
+        device=target_tensor.device,
+    )
+    negatives = total - positives
+    weights = negatives / positives.clamp_min(1.0)
+    weights = weights.clamp(min=1.0, max=float(max_pos_weight))
+    weights = torch_module.where(positives > 0.0, weights, torch_module.ones_like(weights))
+    return weights.to(device=target_tensor.device, dtype=torch_module.float32)
 
 
 def _regression_loss_torch(

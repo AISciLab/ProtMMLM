@@ -1,0 +1,9 @@
+# Required external dataset: PrMFTP
+
+Default config path:
+
+```text
+datasets/downstream/PrMFTP/
+```
+
+Place the PrMFTP raw files in that directory, or change `raw_data_path` in `configs/downstream/prmftp.yaml`.

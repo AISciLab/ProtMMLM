@@ -48,6 +48,8 @@ def read_structured_rows(path: str | Path) -> list[dict[str, Any]]:
         return _read_json_rows(file_path)
     if suffix == ".jsonl":
         return _read_jsonl_rows(file_path)
+    if suffix == ".xlsx":
+        return _read_xlsx_rows(file_path)
 
     raise ValueError(f"Unsupported structured file format: {file_path}")
 
@@ -80,6 +82,36 @@ def _read_jsonl_rows(path: Path) -> list[dict[str, Any]]:
             payload = json.loads(stripped)
             rows.append(_coerce_json_row(payload, path, line_number))
     return rows
+
+
+def _read_xlsx_rows(path: Path) -> list[dict[str, Any]]:
+    try:
+        from openpyxl import load_workbook
+    except ImportError as exc:
+        raise ImportError(
+            "Reading PPIKB .xlsx files requires openpyxl. Install dependencies with "
+            "`pip install -r requirements.txt`."
+        ) from exc
+
+    workbook = load_workbook(path, read_only=True, data_only=True)
+    worksheet = workbook.active
+    rows = worksheet.iter_rows(values_only=True)
+    try:
+        header_row = next(rows)
+    except StopIteration:
+        return []
+
+    headers = ["" if value is None else str(value).strip() for value in header_row]
+    records: list[dict[str, Any]] = []
+    for row in rows:
+        record = {
+            headers[index]: value
+            for index, value in enumerate(row)
+            if index < len(headers) and headers[index]
+        }
+        if any(value not in (None, "") for value in record.values()):
+            records.append(_normalize_row(record))
+    return records
 
 
 def _coerce_json_row(payload: Any, path: Path, line_number: int | None = None) -> dict[str, Any]:
@@ -395,7 +427,7 @@ def _discover_ppikb_files(root: Path) -> list[Path]:
         (
             path
             for path in search_root.rglob("*")
-            if path.is_file() and path.suffix.lower() in {".csv", ".tsv", ".json", ".jsonl"}
+            if path.is_file() and path.suffix.lower() in {".csv", ".tsv", ".json", ".jsonl", ".xlsx"}
             and ".ipynb_checkpoints" not in path.parts
             and "preprocessed" not in path.parts
         ),

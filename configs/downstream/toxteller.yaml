@@ -1,8 +1,8 @@
 task_name: toxteller
 stage: downstream
-raw_data_path: ./data/downstream/ToxTeller
-pretrain_data_root: ./data/pretrain
-pretrain_checkpoint_path: ./outputs/pretrain/esmc600_formal/best.pth
+raw_data_path: ./datasets/downstream/Toxteller
+pretrain_data_root: ./datasets/pretrain
+pretrain_checkpoint_path: ./outputs/pretrain/best.pth
 backend_mode: real
 model_name: esmc_600m
 use_flash_attn: false
@@ -38,12 +38,9 @@ learning_rate: 2.0e-05
 weight_decay: 0.01
 grad_clip: 1.0
 device: cuda
-batch_size: 32
-gradient_accumulation_steps: 1
+batch_size: 64
+gradient_accumulation_steps: 4
 validation_fraction: 0.1
-# num_folds: 5
-# test_fold_index: 0
-# val_fold_offset: 1
 max_residues: 100
 max_frames: 160
 max_epochs: 100

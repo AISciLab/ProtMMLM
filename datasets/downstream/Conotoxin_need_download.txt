@@ -1,0 +1,9 @@
+# Required external dataset: Conotoxin
+
+Default config path:
+
+```text
+datasets/downstream/Conotoxin/
+```
+
+Place the processed positive/negative FASTA files (`pos.fasta`, `neg.fasta`) here, or change `raw_data_path` in `configs/downstream/conotoxin.yaml`.

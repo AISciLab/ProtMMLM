@@ -69,6 +69,8 @@ class DownstreamTrainerConfig:
     backend_mode: str = "real"
     regression_loss_mode: str = "huber"
     regression_delta: float = 1.0
+    multilabel_pos_weight_mode: str = "none"
+    multilabel_max_pos_weight: float = 20.0
     max_sequence_length: int = 100
     protein_max_sequence_length: int = 100
     peptide_max_sequence_length: int = 100
@@ -1127,6 +1129,8 @@ class DownstreamTrainer:
         summary["task_head_type"] = self.config.task_head_type
         summary["task_head_hidden_dims"] = tuple(self.config.task_head_hidden_dims)
         summary["task_head_dropout"] = float(self.config.task_head_dropout)
+        summary["multilabel_pos_weight_mode"] = self.config.multilabel_pos_weight_mode
+        summary["multilabel_max_pos_weight"] = float(self.config.multilabel_max_pos_weight)
         return summary
 
     def component_summary(self) -> Dict[str, str]:
@@ -1167,6 +1171,8 @@ class DownstreamTrainer:
             "task_head_type": self.config.task_head_type,
             "task_head_hidden_dims": str(tuple(self.config.task_head_hidden_dims)),
             "task_head_dropout": str(float(self.config.task_head_dropout)),
+            "multilabel_pos_weight_mode": self.config.multilabel_pos_weight_mode,
+            "multilabel_max_pos_weight": str(float(self.config.multilabel_max_pos_weight)),
             "sequence_encoder_trainable": str(bool(self.config.sequence_encoder_trainable)),
             "structure_encoder_trainable": str(bool(self.config.structure_encoder_trainable)),
             "fusion_transformer_trainable": str(bool(self.config.fusion_transformer_trainable)),
@@ -1516,7 +1522,12 @@ class DownstreamTrainer:
                 delta=self.config.regression_delta,
             )
         if self.task_kind == "multilabel":
-            return multilabel_classification_loss(predictions, targets)
+            return multilabel_classification_loss(
+                predictions,
+                targets,
+                pos_weight_mode=self.config.multilabel_pos_weight_mode,
+                max_pos_weight=self.config.multilabel_max_pos_weight,
+            )
         raise ValueError(f"Unsupported task_kind: {self.task_kind}")
 
     def _build_optimizer(self, torch_module: Any) -> Any:
