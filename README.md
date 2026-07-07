@@ -34,7 +34,7 @@ Keep the repository organized as follows:
 ```text
 ├── checkpoints/
 │   ├── esmc-600m/
-│   └── protmmlm_pretrained.pth
+│   └── pretrain_checkpoint.pth
 ├── configs/
 │   ├── pretrain/pretrain.yaml
 │   └── downstream/
@@ -114,16 +114,16 @@ The ESM runtime source is vendored under `esm/`, but ESMC-600M weights are not c
 checkpoints/esmc-600m/data/weights/esmc_600m_2024_12_v0.pth
 ```
 
-The ProtMMLM pretrained checkpoint can be downloaded from [this link](). Place it at:
+The ProtMMLM pretrained checkpoint can be downloaded from [this link](https://drive.google.com/file/d/1o-upySIGIF1kjTYXOeOCqjLTq5o_GxPP/view?usp=sharing). Place it at:
 
 ```text
-checkpoints/protmmlm_pretrained.pth
+checkpoints/pretrain_checkpoint.pth
 ```
 
 For downstream fine-tuning and analysis, ProtMMLM can initialize from any compatible pretrained checkpoint. This may be:
 
 - `outputs/pretrain/best.pth` from your own pretraining run.
-- `checkpoints/protmmlm_pretrained.pth` downloaded from the link above.
+- `checkpoints/pretrain_checkpoint.pth` downloaded from the link above.
 - Another compatible checkpoint retrained by others.
 
 The default downstream configs use `outputs/pretrain/best.pth`. You can override it at runtime:
@@ -131,7 +131,7 @@ The default downstream configs use `outputs/pretrain/best.pth`. You can override
 ```bash
 PYTHONPATH=. python scripts/run_downstream_finetuning.py \
   --config configs/downstream/ppikb.yaml \
-  --pretrain-checkpoint checkpoints/protmmlm_pretrained.pth
+  --pretrain-checkpoint checkpoints/pretrain_checkpoint.pth
 ```
 
 ## 4. Quick Start
@@ -141,7 +141,7 @@ If you only want to verify the code with the released pretrained checkpoint, use
 ```bash
 PYTHONPATH=. python examples/run_downstream_example.py \
   --task ppikb \
-  --pretrain-checkpoint checkpoints/protmmlm_pretrained.pth
+  --pretrain-checkpoint checkpoints/pretrain_checkpoint.pth
 ```
 
 Run all example folds:
@@ -149,7 +149,7 @@ Run all example folds:
 ```bash
 PYTHONPATH=. python examples/run_downstream_example.py \
   --task all \
-  --pretrain-checkpoint checkpoints/protmmlm_pretrained.pth
+  --pretrain-checkpoint checkpoints/pretrain_checkpoint.pth
 ```
 
 For a short smoke test:
@@ -157,7 +157,7 @@ For a short smoke test:
 ```bash
 PYTHONPATH=. python examples/run_downstream_example.py \
   --task ppikb \
-  --pretrain-checkpoint checkpoints/protmmlm_pretrained.pth \
+  --pretrain-checkpoint checkpoints/pretrain_checkpoint.pth \
   --max-epochs 1 \
   --batch-size 2 \
   --sample-limit 32
@@ -226,19 +226,19 @@ Run fine-tuning:
 ```bash
 PYTHONPATH=. python scripts/run_downstream_finetuning.py \
   --config configs/downstream/toxteller.yaml \
-  --pretrain-checkpoint checkpoints/protmmlm_pretrained.pth
+  --pretrain-checkpoint checkpoints/pretrain_checkpoint.pth
 
 PYTHONPATH=. python scripts/run_downstream_finetuning.py \
   --config configs/downstream/prmftp.yaml \
-  --pretrain-checkpoint checkpoints/protmmlm_pretrained.pth
+  --pretrain-checkpoint checkpoints/pretrain_checkpoint.pth
 
 PYTHONPATH=. python scripts/run_downstream_finetuning.py \
   --config configs/downstream/ppikb.yaml \
-  --pretrain-checkpoint checkpoints/protmmlm_pretrained.pth
+  --pretrain-checkpoint checkpoints/pretrain_checkpoint.pth
 
 PYTHONPATH=. python scripts/run_downstream_finetuning.py \
   --config configs/downstream/conotoxin.yaml \
-  --pretrain-checkpoint checkpoints/protmmlm_pretrained.pth
+  --pretrain-checkpoint checkpoints/pretrain_checkpoint.pth
 ```
 
 ## 7. Direct Verification with Example Folds
@@ -259,7 +259,7 @@ Run one downstream example fold:
 ```bash
 PYTHONPATH=. python examples/run_downstream_example.py \
   --task ppikb \
-  --pretrain-checkpoint checkpoints/protmmlm_pretrained.pth
+  --pretrain-checkpoint checkpoints/pretrain_checkpoint.pth
 ```
 
 Run all example folds:
@@ -267,7 +267,7 @@ Run all example folds:
 ```bash
 PYTHONPATH=. python examples/run_downstream_example.py \
   --task all \
-  --pretrain-checkpoint checkpoints/protmmlm_pretrained.pth
+  --pretrain-checkpoint checkpoints/pretrain_checkpoint.pth
 ```
 
 Short training verification:
@@ -275,7 +275,7 @@ Short training verification:
 ```bash
 PYTHONPATH=. python examples/run_downstream_example.py \
   --task ppikb \
-  --pretrain-checkpoint checkpoints/protmmlm_pretrained.pth \
+  --pretrain-checkpoint checkpoints/pretrain_checkpoint.pth \
   --max-epochs 1 \
   --batch-size 2 \
   --sample-limit 32
@@ -321,7 +321,7 @@ Common arguments:
 --manifest-path datasets/pretrain/pretrain_manifest.csv
 --nature-dir datasets/pretrain/nature
 --md-dir datasets/pretrain/md
---checkpoint checkpoints/protmmlm_pretrained.pth
+--checkpoint checkpoints/pretrain_checkpoint.pth
 --device cuda
 --max-residues 100
 --max-frames 160
@@ -343,7 +343,7 @@ PYTHONPATH=. python scripts/analyze_frame_global_property_prediction.py \
   --manifest-path datasets/pretrain/pretrain_manifest.csv \
   --nature-dir datasets/pretrain/nature \
   --md-dir datasets/pretrain/md \
-  --checkpoint checkpoints/protmmlm_pretrained.pth \
+  --checkpoint checkpoints/pretrain_checkpoint.pth \
   --output-dir results/frame_global_property_prediction/mlp/pca \
   --probe mlp \
   --pca-components 100,300 \
@@ -360,7 +360,7 @@ PYTHONPATH=. python scripts/analyze_frame_global_energy_prediction.py \
   --manifest-path datasets/pretrain/pretrain_manifest.csv \
   --nature-dir datasets/pretrain/nature \
   --md-dir datasets/pretrain/md \
-  --checkpoint checkpoints/protmmlm_pretrained.pth \
+  --checkpoint checkpoints/pretrain_checkpoint.pth \
   --energy-csv datasets/downstream/all_interactions_all.csv \
   --output-dir results/frame_global_energy_embeddings_cache_q01_q99 \
   --embedding-cache results/frame_global_energy_embeddings_cache_q01_q99/all_frame_fusion_energy_total_score_embeddings.npz \
@@ -376,7 +376,7 @@ Reuse that cache for probe training:
 PYTHONPATH=. python scripts/analyze_frame_global_energy_prediction.py \
   --config configs/pretrain/pretrain.yaml \
   --manifest-path datasets/pretrain/pretrain_manifest.csv \
-  --checkpoint checkpoints/protmmlm_pretrained.pth \
+  --checkpoint checkpoints/pretrain_checkpoint.pth \
   --energy-csv datasets/downstream/all_interactions_all.csv \
   --output-dir results/frame_global_energy_prediction/seed51/mlp/pca-500 \
   --embedding-cache results/frame_global_energy_embeddings_cache_q01_q99/all_frame_fusion_energy_total_score_embeddings.npz \
@@ -396,7 +396,7 @@ PYTHONPATH=. python scripts/analyze_frame_global_energy_terms_prediction.py \
   --manifest-path datasets/pretrain/pretrain_manifest.csv \
   --nature-dir datasets/pretrain/nature \
   --md-dir datasets/pretrain/md \
-  --checkpoint checkpoints/protmmlm_pretrained.pth \
+  --checkpoint checkpoints/pretrain_checkpoint.pth \
   --energy-csv datasets/downstream/all_interactions_all.csv \
   --output-dir results/frame_global_energy_terms_prediction_extract \
   --embedding-cache results/frame_global_energy_terms_prediction_extract/energy_terms_embeddings.npz \
@@ -410,7 +410,7 @@ Reuse that cache for probe training:
 PYTHONPATH=. python scripts/analyze_frame_global_energy_terms_prediction.py \
   --config configs/pretrain/pretrain.yaml \
   --manifest-path datasets/pretrain/pretrain_manifest.csv \
-  --checkpoint checkpoints/protmmlm_pretrained.pth \
+  --checkpoint checkpoints/pretrain_checkpoint.pth \
   --energy-csv datasets/downstream/all_interactions_all.csv \
   --output-dir results/frame_global_energy_terms_prediction/seed51/mlp/pca-500 \
   --embedding-cache results/frame_global_energy_terms_prediction_extract/energy_terms_embeddings.npz \
